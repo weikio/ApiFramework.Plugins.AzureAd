@@ -22,7 +22,12 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Sample
             services.AddControllers();
 
             services.AddApiFrameworkStarterKit()
-                .AddAzureAdApi("/test");
+                .AddAzureAdApi("/test", new AzureAdOptions()
+                {
+                    Tenant = "37e55da6-fb62-456a-8d8e-f6f5b649092f",
+                    ClientId = "144cd1e7-827c-4bd3-a097-90acb77d4568",
+                    ClientSecret = ""
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
