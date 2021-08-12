@@ -1,40 +1,106 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Graph;
-using Microsoft.Identity.Client;
+using Weikio.ApiFramework.Plugins.AzureAD.Users;
 
 namespace Weikio.ApiFramework.Plugins.AzureAD.Groups
 {
     /// <summary>
-    /// Requires: GroupMember.Read.All, User.Read.All
+    /// Requires: GroupMember.ReadWrite.All, User.Read.All
     /// </summary>
     public class UserGroupApi
     {
         public AzureAdOptions Configuration { get; set; }
-        
-        public async Task<List<GroupDto>> GetUserGroups(string user)
-        {
-            var result = await GetGroups(user);
 
-            return result;
+        [HttpPost]
+        public async Task<ActionResult> AddUserToGroup(string user, string group)
+        {
+            try
+            {
+                var userService = new UserService();
+                var userDetails = await userService.GetUser(user, Configuration);
+                
+                var groupDetails = await GetGroup(group);
+
+                var client = await GraphServiceClientFactory.GetGraphClient(Configuration);
+
+                await client.Groups[groupDetails.Id].Members.References.Request().AddAsync(userDetails);
+            }
+            catch (ServiceException e)
+            {     
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+
+            return new OkResult();
         }
         
-        public async Task<List<GroupDto>> GetUserSecurityGroups(string user)
+        [HttpDelete]
+        public async Task<ActionResult> RemoveUserFromGroup(string user, string group)
         {
-            var allGroups = await GetGroups(user);
+            try
+            {
+                var userService = new UserService();
+                var userDetails = await userService.GetUser(user, Configuration);
+                
+                var groupDetails = await GetGroup(group);
 
-            var result = allGroups.Where(x => x.IsSecurity).ToList();
+                var client = await GraphServiceClientFactory.GetGraphClient(Configuration);
 
-            return result;
+                await client.Groups[groupDetails.Id].Members[userDetails.Id].Reference.Request().DeleteAsync();
+            }
+            catch (ServiceException e)
+            {     
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+
+            return new OkResult();
+        }
+        
+        public async Task<ActionResult<List<GroupDto>>> GetUserGroups(string user)
+        {
+            try
+            {
+                var result = await GetGroups(user);
+
+                return result;
+            }
+            catch (ServiceException e)
+            {
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+        }
+        
+        public async Task<ActionResult<List<GroupDto>>> GetUserSecurityGroups(string user)
+        {
+            try
+            {
+                var allGroups = await GetGroups(user);
+
+                var result = allGroups.Where(x => x.IsSecurity).ToList();
+
+                return result;
+            }
+            catch (ServiceException e)
+            {
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
         }
 
         private async Task<List<GroupDto>> GetGroups(string user)
         {
-            var graphServiceClient = await GetGraphClient(Configuration);
+            var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(Configuration);
 
             var result = new List<GroupDto>();
             var groups = await graphServiceClient.Users[user].MemberOf.Request().GetAsync();
@@ -58,34 +124,32 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Groups
             return result;
         }
         
-        private static async Task<GraphServiceClient> GetGraphClient(AzureAdOptions options)
+        private async Task<Group> GetGroup(string group)
         {
-            var app = ConfidentialClientApplicationBuilder.Create(options.ClientId)
-                .WithClientSecret(options.ClientSecret)
-                .WithAuthority(new Uri(options.Authority))
-                .Build();
+            var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(Configuration);
 
-            var scopes = new[] { $"{options.ApiUrl}.default" };
+            Group result;
 
-            var tokenResult = await app.AcquireTokenForClient(scopes).ExecuteAsync();
-            var accessToken = tokenResult.AccessToken;
-
-            var httpClient = new HttpClient();
-            var defaultRequestHeaders = httpClient.DefaultRequestHeaders;
-
-            if (defaultRequestHeaders.Accept == null || defaultRequestHeaders.Accept.All(m => m.MediaType != "application/json"))
+            if (Guid.TryParse(group, out _))
             {
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                // Get the group by guid (the default)
+                result = await graphServiceClient.Groups[@group].Request().GetAsync();
+            }
+            else
+            {
+                var req = await graphServiceClient.Groups.Request().Filter($"displayName eq '{group}'").GetResponseAsync();
+                
+                var objs = await req.GetResponseObjectAsync();
+                
+                result = objs.Value.FirstOrDefault();
             }
 
-            var graphServiceClient = new GraphServiceClient($"{options.ApiUrl}{options.Version}/", new DelegateAuthenticationProvider((request =>
+            if (result == null)
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                throw new ServiceException(new Error(), null, HttpStatusCode.NotFound);
+            }
 
-                return Task.CompletedTask;
-            })));
-
-            return graphServiceClient;
+            return result;
         }
     }
 }
