@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.Graph;
 
 namespace Weikio.ApiFramework.Plugins.AzureAD.Users
@@ -9,10 +9,21 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
         {
             var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(options);
 
-            // This can automatically retrieve user by Id (guid) or by user principal name (mm.aa@test.com. email must be urlencoded by the requester) 
-            var result = await graphServiceClient.Users[user].Request().GetAsync();
+            // This can automatically retrieve user by Id (guid) or by user principal name (mm.aa@test.com. email must be urlencoded by the requester).
+            // The default field set doesn't include department so fields must be listed explicitly.
+            var result = await graphServiceClient.Users[user]
+                .Request()
+                .Select("id,userPrincipalName,mail,displayName,givenName,surname,jobTitle,department")
+                .GetAsync();
 
             return result;
+        }
+
+        public async Task UpdateUser(User user, AzureAdOptions options)
+        {
+            var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(options);
+
+            await graphServiceClient.Users[user.Id].Request().UpdateAsync(user);
         }
     }
 }
