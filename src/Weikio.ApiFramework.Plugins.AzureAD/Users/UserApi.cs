@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -8,7 +8,7 @@ using Microsoft.Graph;
 namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 {
     /// <summary>
-    /// Requires: User.Read.All, User.Invite.All
+    /// Requires: User.ReadWrite.All, User.Invite.All
     /// </summary>
     public class UserApi
     {
@@ -16,6 +16,11 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
         public async Task<ActionResult<UserDto>> GetUser(string user)
         {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                return new BadRequestResult();
+            }
+
             try
             {
                 var userService = new UserService();
@@ -23,7 +28,7 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
                 var result = new UserDto(new Guid(userDetails.Id), userDetails.UserPrincipalName, userDetails.Mail, userDetails.DisplayName,
                     userDetails.GivenName,
-                    userDetails.Surname, userDetails.JobTitle);
+                    userDetails.Surname, userDetails.JobTitle, userDetails.Department);
 
                 return result;
             }
@@ -37,6 +42,11 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
         public async Task<ActionResult<UserDto>> GetUserByEmail(string email)
         {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return new BadRequestResult();
+            }
+
             try
             {
                 var client = await GraphServiceClientFactory.GetGraphClient(Configuration);
@@ -56,7 +66,44 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
                 var result = new UserDto(new Guid(userDetails.Id), userDetails.UserPrincipalName, userDetails.Mail, userDetails.DisplayName,
                     userDetails.GivenName,
-                    userDetails.Surname, userDetails.JobTitle);
+                    userDetails.Surname, userDetails.JobTitle, userDetails.Department);
+
+                return result;
+            }
+            catch (ServiceException e)
+            {
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+        }
+
+        public async Task<ActionResult<UserDto>> UpdateUserDepartment(string user, string department)
+        {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                return new BadRequestResult();
+            }
+
+            try
+            {
+                var userService = new UserService();
+                var userDetails = await userService.GetUser(user, Configuration);
+
+                if (userDetails == null)
+                {
+                    throw new ServiceException(new Error(), null, HttpStatusCode.NotFound);
+                }
+
+                userDetails.Department = department;
+
+                await userService.UpdateUser(userDetails, Configuration);
+
+                userDetails = await userService.GetUser(userDetails.Id, Configuration);
+
+                var result = new UserDto(new Guid(userDetails.Id), userDetails.UserPrincipalName, userDetails.Mail, userDetails.DisplayName,
+                        userDetails.GivenName,
+                        userDetails.Surname, userDetails.JobTitle, userDetails.Department);
 
                 return result;
             }

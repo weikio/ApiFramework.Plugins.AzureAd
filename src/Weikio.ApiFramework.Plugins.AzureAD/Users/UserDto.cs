@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 {
@@ -11,8 +11,9 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
         public string GivenName { get; set; }
         public string SurName { get; set; }
         public string JobTitle { get; set; }
+        public string Department { get; set; }
 
-        public UserDto(Guid id, string principalName, string email, string displayName, string givenName, string surName, string jobTitle)
+        public UserDto(Guid id, string principalName, string email, string displayName, string givenName, string surName, string jobTitle, string department)
         {
             Id = id;
             PrincipalName = principalName;
@@ -21,6 +22,7 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             GivenName = givenName;
             SurName = surName;
             JobTitle = jobTitle;
+            Department = department;
         }
 
         public UserDto()
