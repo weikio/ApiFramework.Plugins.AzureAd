@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 
@@ -19,11 +20,11 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             return result;
         }
 
-        public async Task UpdateUser(User user, AzureAdOptions options)
+        public async Task UpdateUser(string user, User changedValues, AzureAdOptions options)
         {
             var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(options);
 
-            await graphServiceClient.Users[user.Id].Request().UpdateAsync(user);
+            await graphServiceClient.Users[user].Request().UpdateAsync(changedValues);
         }
     }
 }

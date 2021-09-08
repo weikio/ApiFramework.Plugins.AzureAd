@@ -89,35 +89,31 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             try
             {
                 var userService = new UserService();
-                var userDetails = await userService.GetUser(user, Configuration);
 
-                if (userDetails == null)
-                {
-                    throw new ServiceException(new Error(), null, HttpStatusCode.NotFound);
-                }
+                var changedValues = new User();
 
                 if (!string.IsNullOrEmpty(department))
                 {
-                    userDetails.Department = department;
+                    changedValues.Department = department;
                 }
                 else
                 {
                     // this is the only way to clear string values: 
                     // https://stackoverflow.com/questions/38249131/how-to-clear-a-field-using-using-microsoft-graph-net-client-library/38704088#38704088
 
-                    userDetails.AdditionalData = new Dictionary<string, object>()
+                    changedValues.AdditionalData = new Dictionary<string, object>()
                     {
                         { "department", null }
                     };
                 }
 
-                await userService.UpdateUser(userDetails, Configuration);
+                await userService.UpdateUser(user, changedValues, Configuration);
 
-                userDetails = await userService.GetUser(userDetails.Id, Configuration);
+                var updatedUser = await userService.GetUser(user, Configuration);
 
-                var result = new UserDto(new Guid(userDetails.Id), userDetails.UserPrincipalName, userDetails.Mail, userDetails.DisplayName,
-                        userDetails.GivenName,
-                        userDetails.Surname, userDetails.JobTitle, userDetails.Department);
+                var result = new UserDto(new Guid(updatedUser.Id), updatedUser.UserPrincipalName, updatedUser.Mail, updatedUser.DisplayName,
+                        updatedUser.GivenName,
+                        updatedUser.Surname, updatedUser.JobTitle, updatedUser.Department);
 
                 return result;
             }
