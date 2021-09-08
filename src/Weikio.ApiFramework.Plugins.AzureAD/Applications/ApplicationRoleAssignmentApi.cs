@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -31,7 +31,10 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
                     var dto = new ApplicationAssignmentDto
                         {
                             Id = assignment.Id,
-                            Role = assignment.ResourceDisplayName, ApplicationId = assignment.ResourceId, UserId = assignment.PrincipalId, User = assignment.PrincipalDisplayName
+                            RoleId = assignment.AppRoleId,
+                            ApplicationId = assignment.ResourceId, 
+                            UserId = assignment.PrincipalId, 
+                            User = assignment.PrincipalDisplayName
                         };
                     
                     dto.ApplicationId = assignment.ResourceId;
@@ -62,10 +65,11 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
                     var dto = new ApplicationAssignmentDto
                     {
                         Id = assignment.Id,
-                        Role = assignment.ResourceDisplayName, ApplicationId = assignment.ResourceId, UserId = assignment.PrincipalId, User = assignment.PrincipalDisplayName
+                        RoleId = assignment.AppRoleId, 
+                        ApplicationId = assignment.ResourceId, 
+                        UserId = assignment.PrincipalId, 
+                        User = assignment.PrincipalDisplayName
                     };
-                    
-                    dto.ApplicationId = assignment.ResourceId;
 
                     return dto;
                 }
