@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -95,7 +96,20 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
                     throw new ServiceException(new Error(), null, HttpStatusCode.NotFound);
                 }
 
-                userDetails.Department = department;
+                if (!string.IsNullOrEmpty(department))
+                {
+                    userDetails.Department = department;
+                }
+                else
+                {
+                    // this is the only way to clear string values: 
+                    // https://stackoverflow.com/questions/38249131/how-to-clear-a-field-using-using-microsoft-graph-net-client-library/38704088#38704088
+
+                    userDetails.AdditionalData = new Dictionary<string, object>()
+                    {
+                        { "department", null }
+                    };
+                }
 
                 await userService.UpdateUser(userDetails, Configuration);
 
