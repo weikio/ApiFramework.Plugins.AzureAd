@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -21,8 +21,8 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Groups
         {
             try
             {
-                var userService = new UserService();
-                var userDetails = await userService.GetUser(user, Configuration);
+                var userService = new UserService(Configuration);
+                var userDetails = await userService.GetUser(user);
                 
                 var groupDetails = await GetGroup(group);
 
@@ -45,8 +45,8 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Groups
         {
             try
             {
-                var userService = new UserService();
-                var userDetails = await userService.GetUser(user, Configuration);
+                var userService = new UserService(Configuration);
+                var userDetails = await userService.GetUser(user);
                 
                 var groupDetails = await GetGroup(group);
 

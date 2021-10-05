@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
@@ -10,6 +10,5 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
         public Guid AppId { get; set; }
         public string Description { get; set; }
         public List<ApplicationRoleDto> ApplicationRoles { get; set; }
-
     }
 }

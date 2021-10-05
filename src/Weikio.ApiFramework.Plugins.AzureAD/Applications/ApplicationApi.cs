@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -31,21 +31,20 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
             }
         }
         
-        public async Task<ActionResult<ApplicationDto>> GetApplicationDetails(string applicationId)
+        public async Task<ActionResult<ApplicationDetailsDto>> GetApplicationDetails(string applicationId)
         {
             try
             {
                 var service = new ApplicationService(Configuration);
-                var apps = await service.GetApplications();
+                
+                var app = await service.GetApplicationDetails(applicationId);
 
-                var result = apps.FirstOrDefault(x => string.Equals(x.Id.ToString(), applicationId, StringComparison.InvariantCultureIgnoreCase) || string.Equals(x.AppId.ToString(), applicationId, StringComparison.InvariantCultureIgnoreCase));
-
-                if (result == null)
+                if (app == null)
                 {
                     throw new ServiceException(new Error() { Message = "Application not found" }, null, HttpStatusCode.NotFound);
                 }
                 
-                return result;
+                return app;
             }
             catch (ServiceException e)
             {

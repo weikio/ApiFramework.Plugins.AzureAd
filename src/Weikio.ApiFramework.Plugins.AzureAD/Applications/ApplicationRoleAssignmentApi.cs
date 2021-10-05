@@ -89,8 +89,8 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
         {
             try
             {
-                var userService = new UserService();
-                var userDetails = await userService.GetUser(user, Configuration);
+                var userService = new UserService(Configuration);
+                var userDetails = await userService.GetUser(user);
 
                 var appRoleAssignment = new AppRoleAssignment() { ResourceId = Guid.Parse(applicationId), PrincipalId = Guid.Parse(userDetails.Id) };
 
