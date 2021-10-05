@@ -24,8 +24,8 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
             try
             {
-                var userService = new UserService();
-                var userDetails = await userService.GetUser(user, Configuration);
+                var userService = new UserService(Configuration);
+                var userDetails = await userService.GetUser(user);
 
                 var result = new UserDto(new Guid(userDetails.Id), userDetails.UserPrincipalName, userDetails.Mail, userDetails.DisplayName,
                     userDetails.GivenName,
@@ -62,8 +62,8 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
                     throw new ServiceException(new Error(), null, HttpStatusCode.NotFound);
                 }
 
-                var userService = new UserService();
-                var userDetails = await userService.GetUser(user.Id, Configuration);
+                var userService = new UserService(Configuration);
+                var userDetails = await userService.GetUser(user.Id);
 
                 var result = new UserDto(new Guid(userDetails.Id), userDetails.UserPrincipalName, userDetails.Mail, userDetails.DisplayName,
                     userDetails.GivenName,
@@ -88,7 +88,7 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
             try
             {
-                var userService = new UserService();
+                var userService = new UserService(Configuration);
 
                 var changedValues = new User();
 
@@ -107,9 +107,9 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
                     };
                 }
 
-                await userService.UpdateUser(user, changedValues, Configuration);
+                await userService.UpdateUser(user, changedValues);
 
-                var updatedUser = await userService.GetUser(user, Configuration);
+                var updatedUser = await userService.GetUser(user);
 
                 var result = new UserDto(new Guid(updatedUser.Id), updatedUser.UserPrincipalName, updatedUser.Mail, updatedUser.DisplayName,
                         updatedUser.GivenName,
@@ -151,6 +151,52 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
                 result.Email = invitationResult.InvitedUser.Mail;
 
                 return result;
+            }
+            catch (ServiceException e)
+            {
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+        }
+
+        public async Task<ActionResult<ExtensionPropertyValue<string>>> SetExtensionPropertyString(string user, string propertyName, string value)
+        {
+            if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(propertyName))
+            {
+                return new BadRequestResult();
+            }
+
+            try
+            {
+                var userService = new UserService(Configuration);
+
+                var propertyValue = await userService.SetExtensionPropertyValue(user, propertyName, value);
+
+                return propertyValue.ToStringValue();
+            }
+            catch (ServiceException e)
+            {
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+        }
+
+        public async Task<ActionResult<ExtensionPropertyValue<string>>> GetExtensionPropertyString(string user, string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(propertyName))
+            {
+                return new BadRequestResult();
+            }
+
+            try
+            {
+                var userService = new UserService(Configuration);
+
+                var propertyValue = await userService.GetExtensionPropertyValue(user, propertyName);
+
+                return propertyValue.ToStringValue();
             }
             catch (ServiceException e)
             {
