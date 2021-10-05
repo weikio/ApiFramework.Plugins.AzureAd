@@ -160,6 +160,7 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             }
         }
 
+        [HttpPut]
         public async Task<ActionResult<ExtensionPropertyValue<string>>> SetExtensionPropertyString(string user, string propertyName, string value)
         {
             if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(propertyName))
