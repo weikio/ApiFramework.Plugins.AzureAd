@@ -18,7 +18,7 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
         {
             var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(_configuration);
 
-            var apps = await graphServiceClient.Applications
+            var apps = await graphServiceClient.ServicePrincipals
                 .Request()
                 .GetAsync();
 
@@ -50,36 +50,46 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Applications
         {
             var graphServiceClient = await GraphServiceClientFactory.GetGraphClient(_configuration);
 
-            var foundApps = await graphServiceClient.Applications
+            var foundServicePrincipals = await graphServiceClient.ServicePrincipals
                 .Request()
                 .Filter($"appId eq '{applicationId}'")
                 .GetAsync();
 
-            var appDto = ToDto<ApplicationDetailsDto>(foundApps.FirstOrDefault());
+            var appDto = ToDto<ApplicationDetailsDto>(foundServicePrincipals.FirstOrDefault());
 
             if (appDto != null)
             {
-                var extensionProperties = await graphServiceClient.Applications[appDto.Id.ToString()].ExtensionProperties
+                var foundApps = await graphServiceClient.Applications
                     .Request()
+                    .Filter($"appId eq '{applicationId}'")
                     .GetAsync();
 
-                if (extensionProperties != null)
+                var app = foundApps.FirstOrDefault();
+
+                if (app != null)
                 {
-                    appDto.ExtensionProperties = extensionProperties
-                        .Select(p => new ExtensionPropertyDto()
-                        {
-                            Id = p.Id,
-                            Name = p.Name,
-                            TargetObjects = p.TargetObjects?.ToList()
-                        })
-                        .ToList();
+                    var extensionProperties = await graphServiceClient.Applications[app.Id.ToString()].ExtensionProperties
+                        .Request()
+                        .GetAsync();
+
+                    if (extensionProperties != null)
+                    {
+                        appDto.ExtensionProperties = extensionProperties
+                            .Select(p => new ExtensionPropertyDto()
+                            {
+                                Id = p.Id,
+                                Name = p.Name,
+                                TargetObjects = p.TargetObjects?.ToList()
+                            })
+                            .ToList();
+                    }
                 }
             }
 
             return appDto;
         }
 
-        private static T ToDto<T>(Microsoft.Graph.Application app) where T : ApplicationDto
+        private static T ToDto<T>(Microsoft.Graph.ServicePrincipal app) where T : ApplicationDto
         {
             if (app == null)
             {
