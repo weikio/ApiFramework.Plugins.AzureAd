@@ -125,7 +125,7 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             }
         }
 
-        public async Task<ActionResult<UserDto>> CreateInvititation(string email, bool sendInvitationMessage, string inviteRedirectUrl)
+        public async Task<ActionResult<UserDto>> CreateInvititation(string email, bool sendInvitationMessage, string inviteRedirectUrl, string invitationLanguage)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(inviteRedirectUrl))
             {
@@ -138,8 +138,15 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
 
                 var invitationResult = await client.Invitations.Request().AddAsync(new Invitation()
                 {
-                    InvitedUserEmailAddress = email, InviteRedirectUrl = inviteRedirectUrl, SendInvitationMessage = sendInvitationMessage
+                    InvitedUserEmailAddress = email,
+                    InviteRedirectUrl = inviteRedirectUrl,
+                    SendInvitationMessage = sendInvitationMessage
                 });
+
+                if (!string.IsNullOrWhiteSpace(invitationLanguage))
+                {
+                    invitationResult.InvitedUserMessageInfo = new InvitedUserMessageInfo { MessageLanguage = invitationLanguage };
+                }
 
                 if (invitationResult.InvitedUser == null)
                 {
