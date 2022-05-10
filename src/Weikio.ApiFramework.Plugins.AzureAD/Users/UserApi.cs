@@ -125,7 +125,8 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             }
         }
 
-        public async Task<ActionResult<UserDto>> CreateInvititation(string email, bool sendInvitationMessage, string inviteRedirectUrl, string invitationLanguage)
+        public async Task<ActionResult<UserDto>> CreateInvititation(string email, bool sendInvitationMessage,
+            string inviteRedirectUrl, string invitationLanguage, string customInvitationMessage)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(inviteRedirectUrl))
             {
@@ -136,17 +137,23 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             {
                 var client = await GraphServiceClientFactory.GetGraphClient(Configuration);
 
-                var invitationResult = await client.Invitations.Request().AddAsync(new Invitation()
+                var invitation = new Invitation()
                 {
-                    InvitedUserEmailAddress = email,
-                    InviteRedirectUrl = inviteRedirectUrl,
-                    SendInvitationMessage = sendInvitationMessage
-                });
+                    InvitedUserEmailAddress = email, InviteRedirectUrl = inviteRedirectUrl, SendInvitationMessage = sendInvitationMessage,
+                    InvitedUserMessageInfo = new InvitedUserMessageInfo()
+                };
 
                 if (!string.IsNullOrWhiteSpace(invitationLanguage))
                 {
-                    invitationResult.InvitedUserMessageInfo = new InvitedUserMessageInfo { MessageLanguage = invitationLanguage };
+                    invitation.InvitedUserMessageInfo.MessageLanguage = invitationLanguage;
                 }
+
+                if (!string.IsNullOrWhiteSpace(customInvitationMessage))
+                {
+                    invitation.InvitedUserMessageInfo.CustomizedMessageBody = customInvitationMessage;
+                }
+
+                var invitationResult = await client.Invitations.Request().AddAsync(invitation);
 
                 if (invitationResult.InvitedUser == null)
                 {
