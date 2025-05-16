@@ -125,6 +125,62 @@ namespace Weikio.ApiFramework.Plugins.AzureAD.Users
             }
         }
 
+        public async Task<ActionResult<UserDto>> UpdateUserGivenNameSurname(string user, string givenName, string surname)
+        {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                return new BadRequestResult();
+            }
+
+            try
+            {
+                var userService = new UserService(Configuration);
+
+                var changedValues = new User();
+
+                var additionalData = new Dictionary<string, object>();
+
+                if (!string.IsNullOrEmpty(givenName))
+                {
+                    changedValues.GivenName = givenName;
+                }
+                else
+                {
+                    additionalData["givenName"] = null;
+                }
+
+                if (!string.IsNullOrEmpty(surname))
+                {
+                    changedValues.Surname = surname;
+                }
+                else
+                {
+                    additionalData["surname"] = null;
+                }
+
+                if (additionalData.Any())
+                {
+                    changedValues.AdditionalData = additionalData;
+                }
+
+                await userService.UpdateUser(user, changedValues);
+
+                var updatedUser = await userService.GetUser(user);
+
+                var result = new UserDto(new Guid(updatedUser.Id), updatedUser.UserPrincipalName, updatedUser.Mail, updatedUser.DisplayName,
+                        updatedUser.GivenName,
+                        updatedUser.Surname, updatedUser.JobTitle, updatedUser.Department);
+
+                return result;
+            }
+            catch (ServiceException e)
+            {
+                var contentResult = new ContentResult { Content = e.Error?.Message, StatusCode = (int)e.StatusCode };
+
+                return contentResult;
+            }
+        }
+
         public async Task<ActionResult<UserDto>> CreateInvititation(string email, bool sendInvitationMessage,
             string inviteRedirectUrl, string invitationLanguage, string customInvitationMessage)
         {
